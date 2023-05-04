@@ -1,1 +1,8 @@
 .vscode
+.vs
+bin/
+libs/
+obj/
+**.vcxproj
+**.sln
+**.user
