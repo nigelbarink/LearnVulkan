@@ -1,6 +1,6 @@
 /*
     Following the vulkan tutorial on :
-   https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer
+   https://vulkan-tutorial.com/en/Vertex_buffers/Index_buffer
 */
 
 #define GLFW_INCLUDE_VULKAN
@@ -69,9 +69,14 @@ const std::vector<const char*> deviceExtensions = {
 
 
     const std::vector<Vertex> vertices = {
-        {{0.0f, -0.5f}, {1.0f,1.0f, 1.0f}},
-        {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, -0.5f}, {0.0f,1.0f, 0.0f}},
+        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+    };
+
+    const std::vector<uint16_t> indices = {
+        0,1,2,2,3,0
     };
 
     class HelloTriangleApplication {
@@ -102,14 +107,18 @@ const std::vector<const char*> deviceExtensions = {
         VkPipeline graphicsPipeline;
         std::vector<VkFramebuffer> swapchainFrameBuffers;
         VkCommandPool commandPool;
+
         VkBuffer vertexBuffer;
         VkDeviceMemory vertexBufferMemory;
+        VkBuffer indexBuffer;
+        VkDeviceMemory indexBufferMemory;
+
+
         std::vector<VkCommandBuffer> commandBuffers;
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;
         bool framebufferResized = false;
-
         uint32_t currentFrame = 0;
 
         struct SwapChainSupportDetails {
@@ -149,6 +158,7 @@ const std::vector<const char*> deviceExtensions = {
             createFramebuffers();
             createCommandPool();
             createVertexBuffer();
+            createIndexBuffer();
             createCommandBuffers();
             createSyncObjects();
         }
@@ -252,6 +262,30 @@ const std::vector<const char*> deviceExtensions = {
             vkFreeMemory(device, stagingBufferMemory, nullptr);
         }
 
+        void createIndexBuffer() {
+            VkDeviceSize buffersize = sizeof(indices[0]) * indices.size();
+
+            VkBuffer stagingBuffer;
+            VkDeviceMemory stagingBufferMemory;
+            CreateBuffer(buffersize, 
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                stagingBuffer, stagingBufferMemory);
+
+            void* data;
+            vkMapMemory(device, stagingBufferMemory, 0, buffersize, 0, &data);
+            memcpy(data, indices.data(), (size_t)buffersize);
+            vkUnmapMemory(device, stagingBufferMemory);
+
+            CreateBuffer(buffersize,
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+            copyBuffer(stagingBuffer, indexBuffer, buffersize);
+
+            vkDestroyBuffer(device, stagingBuffer, nullptr);
+            vkFreeMemory(device, stagingBufferMemory, nullptr);
+        }
 
         void recreateSwapChain() {
             int width = 0, height = 0;
@@ -341,6 +375,8 @@ const std::vector<const char*> deviceExtensions = {
             VkDeviceSize offsets[] = { 0 };
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
+            vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
             VkViewport viewport{};
             viewport.x = 0.0f;
             viewport.y = 0.0f;
@@ -355,10 +391,7 @@ const std::vector<const char*> deviceExtensions = {
             scissor.extent = swapChainExtent;
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-            
-
-
-            vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+            vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
             vkCmdEndRenderPass(commandBuffer);
 
@@ -1126,8 +1159,12 @@ const std::vector<const char*> deviceExtensions = {
         void cleanup(){
             cleanupSwapChain();
 
+            vkDestroyBuffer(device, indexBuffer, nullptr);
+            vkFreeMemory(device, vertexBufferMemory, nullptr);
+
             vkDestroyBuffer(device, vertexBuffer, nullptr);
             vkFreeMemory(device, vertexBufferMemory, nullptr);
+
             vkDestroyPipeline(device, graphicsPipeline, nullptr);
             vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
             vkDestroyRenderPass(device, renderPass, nullptr);
