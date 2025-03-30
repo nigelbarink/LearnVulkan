@@ -1,8 +1,6 @@
 .vscode
-.vs
-bin/
-libs/
-obj/
-**.vcxproj
-**.sln
-**.user
+bin
+**.spv
+**.filters
+Makefile
+**/Makefile
