@@ -1,6 +1,16 @@
-.vscode
-bin
+# Visual Studio 2024
+**.vcxproj
 **.spv
 **.filters
+**.sln
+# Visual Studio Code
+.vscode
+# Gnu Make 
 Makefile
 **/Makefile
+
+# project specific
+libs
+bin
+obj
+build
