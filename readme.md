@@ -2,7 +2,6 @@
 
 ![Vulkan](https://www.vulkan.org/user/pages/01.home/Vulkan-Wide.png) 
 
-
-
-
 ![Rendering of first Triangle using vulkan](FirstTriangle.png)
+
+![Rendering of the first quad in 3D](FirstQuad.png)
